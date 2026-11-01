@@ -4,7 +4,7 @@ This deployment serves the React app and authenticated Node API together on Verc
 
 ## 1. Restore database availability
 
-Your `vedamock` project was linked to a CLOSED billing account. In Firebase project settings, switch the project to Spark if allowed, or link an open billing account. Confirm Firestore can read/write and Authentication is enabled. Vercel cannot repair or bypass a suspended Firebase project. If the console refuses changes, resolve billing through Google support or use a new Firebase Spark project and update all configuration to that project.
+The previous `vedamock` project was linked to a CLOSED billing account. The new selected project is `vedamock-29e3f`; keep it on Spark and enable Auth/Firestore there. For the old project only: In Firebase project settings, switch the project to Spark if allowed, or link an open billing account. Confirm Firestore can read/write and Authentication is enabled. Vercel cannot repair or bypass a suspended Firebase project. If the console refuses changes, resolve billing through Google support or use a new Firebase Spark project and update all configuration to that project.
 
 ## 2. Deploy database rules
 
@@ -13,7 +13,7 @@ Open PowerShell inside the folder containing package.json and firebase.json:
 ```powershell
 npm.cmd ci
 npx.cmd firebase login
-npx.cmd firebase deploy --project vedamock --only "firestore"
+npx.cmd firebase deploy --project vedamock-29e3f --only "firestore"
 ```
 
 Do NOT include `functions`. Private test documents and answer keys remain inaccessible to students; the Node API grades on the server. No Storage deployment is needed because uploads are local JSON/CSV parsing.
@@ -27,15 +27,15 @@ Before deploying, add these variables to Vercel **Project Settings → Environme
 | Name | Value/source |
 | --- | --- |
 | VITE_FIREBASE_API_KEY | Firebase web app apiKey |
-| VITE_FIREBASE_AUTH_DOMAIN | vedamock.firebaseapp.com |
-| VITE_FIREBASE_PROJECT_ID | vedamock |
+| VITE_FIREBASE_AUTH_DOMAIN | vedamock-29e3f.firebaseapp.com |
+| VITE_FIREBASE_PROJECT_ID | vedamock-29e3f |
 | VITE_FIREBASE_APP_ID | Your Firebase web app appId |
-| VITE_FIREBASE_MESSAGING_SENDER_ID | 2369128935 |
-| VITE_FIREBASE_STORAGE_BUCKET | vedamock.firebasestorage.app |
+| VITE_FIREBASE_MESSAGING_SENDER_ID | 481678947260 |
+| VITE_FIREBASE_STORAGE_BUCKET | vedamock-29e3f.firebasestorage.app |
 | VITE_FIREBASE_FUNCTIONS_REGION | us-central1 (retained for optional Functions deployment) |
 | VITE_USE_FIREBASE_EMULATORS | false |
 | VITE_API_BACKEND | vercel |
-| FIREBASE_PROJECT_ID | vedamock |
+| FIREBASE_PROJECT_ID | vedamock-29e3f |
 | FIREBASE_CLIENT_EMAIL | Service account client_email |
 | FIREBASE_PRIVATE_KEY | Service account private_key, including BEGIN/END lines |
 

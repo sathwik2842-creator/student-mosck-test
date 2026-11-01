@@ -71,23 +71,26 @@ function questionForBank(data) {
   return clean;
 }
 export const adminOverview = callable(async () => {
-  const [adminRoles, resultsCount, activeCount, questionCount] =
-    await Promise.all([
-      db().collection("roles").where("isAdmin", "==", true).get(),
-      db().collection("results").count().get(),
-      db().collection("testCatalog").where("active", "==", true).count().get(),
-      db().collection("questionBank").count().get(),
-    ]);
-  const admins = new Set(adminRoles.docs.map((d) => d.id));
-  let registeredStudents = 0,
-    pageToken;
-  do {
-    const page = await getAuth().listUsers(1000, pageToken);
-    registeredStudents += page.users.filter(
-      (u) => !admins.has(u.uid) && u.providerData.length > 0,
-    ).length;
-    pageToken = page.pageToken;
-  } while (pageToken);
+  // Auth pagination and independent Firestore counts can run concurrently.
+  const countRegisteredStudents = async () => {
+    const adminRoles = await db().collection("roles").where("isAdmin", "==", true).get();
+    const admins = new Set(adminRoles.docs.map((d) => d.id));
+    let registeredStudents = 0, pageToken;
+    do {
+      const page = await getAuth().listUsers(1000, pageToken);
+      registeredStudents += page.users.filter(
+        (u) => !admins.has(u.uid) && u.providerData.length > 0,
+      ).length;
+      pageToken = page.pageToken;
+    } while (pageToken);
+    return registeredStudents;
+  };
+  const [registeredStudents, resultsCount, activeCount, questionCount] = await Promise.all([
+    countRegisteredStudents(),
+    db().collection("results").count().get(),
+    db().collection("testCatalog").where("active", "==", true).count().get(),
+    db().collection("questionBank").count().get(),
+  ]);
   return {
     registeredStudents,
     testsTaken: resultsCount.data().count,
@@ -96,6 +99,7 @@ export const adminOverview = callable(async () => {
     updatedAt: new Date().toISOString(),
   };
 });
+
 export const adminGetTest = callable(async (request) => {
   const id = pickId(request.data),
     snapshot = await db().doc(`tests/${id}`).get();

@@ -8,10 +8,19 @@ const statuses = { "unauthenticated": 401, "permission-denied": 403, "invalid-ar
 
 export function createHandler({ verifyToken, getHandlers }) {
   return async (req, res) => {
+    const started = performance.now();
+    let operation = "unknown";
+    const respond = (status, payload) => {
+      const durationMs = Math.max(0, Math.round(performance.now() - started));
+      res.setHeader("Server-Timing", `api;dur=${durationMs}`);
+      if (durationMs >= 2000)
+        console.info("Slow API request", { operation, status, durationMs });
+      return res.status(status).json(payload);
+    };
     res.setHeader("Cache-Control", "no-store");
     if (req.method !== "POST") {
       res.setHeader("Allow", "POST");
-      return res.status(405).json({ error: { code: "invalid-argument", message: "Use POST." } });
+      return respond(405, { error: { code: "invalid-argument", message: "Use POST." } });
     }
     try {
       if (!/^application\/json(?:;|$)/i.test(req.headers["content-type"] || ""))
@@ -38,15 +47,16 @@ export function createHandler({ verifyToken, getHandlers }) {
       const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
       if (!body || Buffer.byteLength(JSON.stringify(body)) > 1000000 || !operations.has(body.operation))
         throw Object.assign(new Error("Invalid operation or request size."), { code: "invalid-argument" });
+      operation = body.operation;
       const handlers = await getHandlers();
       const handler = handlers[body.operation];
       const data = await handler.run({ data: body.data, auth: { uid: token.uid, token } });
-      return res.status(200).json({ data });
+      return respond(200, { data });
     } catch (error) {
       const code = error instanceof SyntaxError ? "invalid-argument" : error.code;
       const status = statuses[code] || 500;
       if (status === 500) console.error("API operation failed", { code: "internal" });
-      return res.status(status).json({ error: {
+      return respond(status, { error: {
         code: status === 500 ? "internal" : code,
         message: status === 500 ? "Unable to complete the operation. Please retry." : error.message,
       } });

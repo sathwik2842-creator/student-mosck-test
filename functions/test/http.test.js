@@ -11,6 +11,7 @@ async function request({ method = "POST", body = { operation: "startTest", data:
 test("HTTP adapter requires verified identity and ignores forged client auth", async () => {
   const r = await request({ body: { operation:"startTest", data:{ testId:"main", auth:{ uid:"attacker" } }, auth:{uid:"attacker"} } });
   assert.equal(r.code,200); assert.equal(r.body.data.uid,"verified-user"); assert.equal(r.headers["Cache-Control"],"no-store");
+  assert.match(r.headers["Server-Timing"], /^api;dur=\d+$/);
 });
 test("HTTP adapter rejects missing, expired and revoked tokens", async () => {
   assert.equal((await request({token:null})).code,401);

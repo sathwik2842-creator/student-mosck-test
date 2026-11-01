@@ -14,7 +14,7 @@ test("HTTP adapter requires verified identity and ignores forged client auth", a
 });
 test("HTTP adapter rejects missing, expired and revoked tokens", async () => {
   assert.equal((await request({token:null})).code,401);
-  assert.equal((await request({verify:async()=>{throw new Error("revoked");}})).code,401);
+  assert.equal((await request({verify:async()=>{throw Object.assign(new Error("revoked"),{code:"auth/id-token-revoked"});}})).code,401);
 });
 test("HTTP adapter restricts method, operation, malformed JSON and payload size", async () => {
   assert.equal((await request({method:"GET"})).code,405);
@@ -27,4 +27,16 @@ test("HTTP adapter preserves authorization errors without exposing internal erro
   assert.equal(denied.code,403);
   const broken=await request({handler:async()=>{throw new Error("private-secret");}});
   assert.equal(broken.code,500); assert.ok(!JSON.stringify(broken.body).includes("private-secret"));
+});
+
+test("HTTP adapter distinguishes server credential failure from rejected login tokens", async () => {
+  for (const code of ["auth/invalid-credential", "app/invalid-credential", "auth/insufficient-permission"]) {
+    const result = await request({verify: async()=>{throw Object.assign(new Error("secret-private-key"),{code});}});
+    assert.equal(result.code,503);
+    assert.equal(result.body.error.code,"unavailable");
+    assert.ok(!JSON.stringify(result.body).includes("secret-private-key"));
+  }
+  for (const code of ["auth/invalid-id-token", "auth/id-token-expired", "auth/user-disabled"]) {
+    assert.equal((await request({verify:async()=>{throw Object.assign(new Error("token"),{code});}})).code,401);
+  }
 });

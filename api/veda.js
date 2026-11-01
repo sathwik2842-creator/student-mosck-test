@@ -9,7 +9,12 @@ async function initialize() {
     if (!projectId || !clientEmail || !privateKey) throw Object.assign(new Error("Server configuration is missing."), { code: "internal" });
     if (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST)
       throw new Error("Emulators are forbidden in the deployed API.");
-    initializeApp({ projectId, credential: cert({ projectId, clientEmail, privateKey: privateKey.replace(/\\n/g, "\n") }) });
+    try {
+      initializeApp({ projectId, credential: cert({ projectId, clientEmail, privateKey: privateKey.replace(/\\n/g, "\n") }) });
+    } catch {
+      console.error("Firebase Admin initialization failed. Check the server project, service-account email and private-key format.");
+      throw Object.assign(new Error("Server authentication configuration is invalid."), { code: "internal" });
+    }
   }
 }
 export default createHandler({

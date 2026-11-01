@@ -22,8 +22,18 @@ export function createHandler({ verifyToken, getHandlers }) {
       let token;
       try { token = await verifyToken(bearer[1]); }
       catch (error) {
+        const tokenErrors = new Set([
+          "auth/argument-error", "auth/invalid-id-token", "auth/id-token-expired",
+          "auth/id-token-revoked", "auth/user-disabled", "auth/user-not-found",
+        ]);
+        const diagnosticCode = typeof error.code === "string" && /^[a-z0-9/._-]{1,80}$/i.test(error.code)
+          ? error.code : "unknown";
+        // Log codes only: never log tokens, key material, or SDK error messages.
+        console.error("Firebase identity verification failed", { code: diagnosticCode });
         if (error.code === "internal") throw error;
-        throw Object.assign(new Error("Your session expired. Sign in again."), { code: "unauthenticated" });
+        if (tokenErrors.has(error.code))
+          throw Object.assign(new Error("Your login could not be verified. Please sign in again."), { code: "unauthenticated" });
+        throw Object.assign(new Error("Server authentication is unavailable. Ask the administrator to check Firebase server credentials."), { code: "unavailable" });
       }
       const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
       if (!body || Buffer.byteLength(JSON.stringify(body)) > 1000000 || !operations.has(body.operation))

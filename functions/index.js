@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase-admin/app";
+import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { setGlobalOptions } from "firebase-functions/v2";
@@ -10,7 +10,13 @@ import {
   metadata,
   ValidationError,
 } from "./grading.js";
-initializeApp();
+if (!getApps().some(app => app.name === "[DEFAULT]")) {
+  const { FIREBASE_PROJECT_ID: projectId, FIREBASE_CLIENT_EMAIL: clientEmail, FIREBASE_PRIVATE_KEY: privateKey } = process.env;
+  initializeApp(projectId && clientEmail && privateKey ? {
+    projectId,
+    credential: cert({ projectId, clientEmail, privateKey: privateKey.replace(/\\n/g, "\n") }),
+  } : undefined);
+}
 const db = getFirestore();
 setGlobalOptions({ region: "us-central1", maxInstances: 10 });
 const uidOf = (request) => {

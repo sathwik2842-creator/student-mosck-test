@@ -1,3 +1,5 @@
+> **New deployment option:** For the complete app on Vercel (including secure grading/admin API), follow [VERCEL-LAUNCH.md](VERCEL-LAUNCH.md). This avoids Firebase Cloud Functions deployment. Firebase Auth/Firestore must remain active.
+
 # Veda Test — production launch
 
 This repository supports a Vercel static frontend or Firebase Hosting. Both use Firebase Authentication, Firestore and callable Cloud Functions as the backend. Vercel does **not** deploy the Firebase backend.

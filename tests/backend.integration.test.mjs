@@ -298,3 +298,41 @@ test("bank CRUD, atomic import validation, idempotent retries and role revocatio
     (e) => e.code === "functions/permission-denied",
   );
 });
+
+test("Vercel HTTP adapter uses real verified emulator tokens and the same secure grading handlers", async () => {
+  assert.equal(process.env.FIRESTORE_EMULATOR_HOST, "127.0.0.1:8080");
+  process.env.GCLOUD_PROJECT = "demo-veda-test";
+  const { createHandler } = await import("../server/http.js");
+  const { getAuth: adminAuth } = require("firebase-admin/auth");
+  const { getApps, deleteApp: deleteAdminApp } = require("firebase-admin/app");
+  const hadDefault = getApps().some(a => a.name === "[DEFAULT]");
+  const handlers = await import("../functions/index.js");
+  const api = createHandler({ verifyToken: t => adminAuth(admin).verifyIdToken(t, true), getHandlers: async () => handlers });
+  const c = await client();
+  const token = await c.user.getIdToken();
+  async function post(operation, data, bearer = token) {
+    const response = { setHeader() {}, status(n) { this.code=n; return this; }, json(b) { this.body=b; return this; } };
+    await api({ method:"POST",headers:{"content-type":"application/json",authorization:`Bearer ${bearer}`},body:{operation,data} },response);
+    return response;
+  }
+  try {
+    assert.equal((await post("startTest", { testId:"main" }, "forged")).code,401);
+    assert.equal((await post("adminOverview",{})).code,403);
+    const start = await post("startTest", {testId:"main"});
+    assert.equal(start.code,200);
+    assert.equal(start.body.data.questions[0].correctAnswer,undefined);
+    const attemptId = start.body.data.attemptId;
+    assert.equal((await post("saveAttempt", {attemptId,answers:{0:"16"},revision:1})).code,200);
+    const result = await post("submitTest", {attemptId,answers:{0:"16"},score:300,userId:"forged"});
+    assert.equal(result.code,200); assert.equal(result.body.data.score,4);
+    assert.equal(result.body.data.userId,c.user.uid);
+    const repeat = await post("submitTest",{attemptId,answers:{}});
+    assert.equal(repeat.body.data.score,4);
+    await db.doc(`roles/${c.user.uid}`).set({isAdmin:true});
+    assert.equal((await post("adminOverview",{})).code,200);
+    await db.doc(`roles/${c.user.uid}`).delete();
+    assert.equal((await post("adminOverview",{})).code,403);
+  } finally {
+    if (!hadDefault) await deleteAdminApp(getApps().find(a=>a.name==="[DEFAULT]"));
+  }
+});

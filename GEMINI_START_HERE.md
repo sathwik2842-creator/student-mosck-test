@@ -1,3 +1,5 @@
+> **New deployment option:** For the complete app on Vercel (including secure grading/admin API), follow [VERCEL-LAUNCH.md](VERCEL-LAUNCH.md). This avoids Firebase Cloud Functions deployment. Firebase Auth/Firestore must remain active.
+
 # Paste this request into Gemini with the project files
 
 Continue development and deployment of the attached **Veda Test** application from its existing code. Do not rebuild or replace the project from scratch.

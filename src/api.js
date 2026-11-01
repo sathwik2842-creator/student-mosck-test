@@ -6,12 +6,8 @@ import {
   orderBy,
   limit,
 } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
-import { db, functions } from "./firebase";
-const call = async (name, data) => {
-  const response = await httpsCallable(functions, name)(data);
-  return response.data;
-};
+import { db } from "./firebase";
+import { invoke as call } from "./transport";
 export const startTest = (testId) => call("startTest", { testId });
 export const saveAttempt = (attemptId, answers, revision) =>
   call("saveAttempt", { attemptId, answers, revision });

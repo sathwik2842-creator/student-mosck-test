@@ -1,3 +1,5 @@
+> **New deployment option:** For the complete app on Vercel (including secure grading/admin API), follow [VERCEL-LAUNCH.md](VERCEL-LAUNCH.md). This avoids Firebase Cloud Functions deployment. Firebase Auth/Firestore must remain active.
+
 # Veda Test
 
 React, Tailwind CSS and Lucide frontend with Firebase Authentication, Cloud Firestore and callable Cloud Functions. Sign-in is required. Test history is scoped to the signed-in student. There is no mock auth, local result storage, client-side answer bank, or client-authoritative grading.

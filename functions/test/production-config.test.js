@@ -85,7 +85,7 @@ test("hosting configs preserve SPA routes, immutable assets, and Google popup co
   );
   assert.ok(
     vercel.rewrites.some(
-      (r) => r.source === "/(.*)" && r.destination === "/index.html",
+      (r) => r.source === "/((?!api/).*)" && r.destination === "/index.html",
     ),
   );
   assert.equal(vercel.outputDirectory, "dist");

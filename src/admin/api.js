@@ -5,10 +5,8 @@ import {
   orderBy,
   limit,
 } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
-import { db, functions } from "../firebase";
-const invoke = async (name, data = {}) =>
-  (await httpsCallable(functions, name, { timeout: 120000 })(data)).data;
+import { db } from "../firebase";
+import { invoke } from "../transport";
 export const getOverview = () => invoke("adminOverview");
 export const getTest = (id) => invoke("adminGetTest", { id });
 export const saveTest = (id, paper, expectedVersion) =>

@@ -1,3 +1,5 @@
+> **New deployment option:** For the complete app on Vercel (including secure grading/admin API), follow [VERCEL-LAUNCH.md](VERCEL-LAUNCH.md). This avoids Firebase Cloud Functions deployment. Firebase Auth/Firestore must remain active.
+
 # Veda Test — complete continuation handoff
 
 Prepared on 1 November 2026 (Asia/Kolkata). Read this file first when continuing in Gemini or another development environment. This is a working codebase, not a specification to rebuild from scratch.

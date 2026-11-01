@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    // A server-managed role document is the single source of admin authorization.
+    function admin() {
+      return signedIn() && exists(/databases/$(database)/documents/roles/$(request.auth.uid))
+        && get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.isAdmin == true;
+    }
+    function ownsResult() { return signedIn() && resource.data.userId == request.auth.uid; }
+    match /roles/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, write: if false;
+    }
+    // tests contain private answer keys. Authenticated startTest exposes safe
+    // questions only for published tests (or the owner's existing attempt).
+    // Admin mutations use authenticated, role-checked callable Functions so
+    // validation, optimistic versions and audit logging cannot be bypassed.
+    match /tests/{id} { allow read, write: if false; }
+    match /questionBank/{id} { allow read: if admin(); allow write: if false; }
+    match /testCatalog/{id} {
+      allow read: if signedIn() && (resource.data.active == true || admin());
+      allow write: if false;
+    }
+    match /attempts/{id} { allow read, write: if false; }
+    match /activeAttempts/{id} { allow read, write: if false; }
+    match /results/{id} {
+      allow read: if ownsResult() || admin();
+      // submitTest creates the owner's authoritative result using the server
+      // answer key and deadline. Students may edit only their own private notes.
+      allow create, delete: if false;
+      allow update: if ownsResult()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentNotes'])
+        && request.resource.data.studentNotes is string
+        && request.resource.data.studentNotes.size() <= 2000;
+    }
+    match /adminImports/{id} { allow read, write: if false; }
+    match /auditLog/{id} { allow read, write: if false; }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

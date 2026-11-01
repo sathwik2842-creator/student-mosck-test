@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // CSV/JSON imports are parsed locally; no avatars or cloud file uploads exist.
+    // Keep unused buckets private. Add validated owner-only paths if a real
+    // upload feature is implemented, and test those rules before enabling it.
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}
